@@ -3,8 +3,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 export function useSound() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const voicesRef = useRef([])
-  const utteranceRef = useRef(null)
-  const onEndCallbackRef = useRef(null)
 
   useEffect(() => {
     const loadVoices = () => {
@@ -20,7 +18,6 @@ export function useSound() {
 
   const pickVoice = useCallback(() => {
     const voices = voicesRef.current
-    // Prefer a local English female voice for a child-friendly sound
     return (
       voices.find(v => v.lang.startsWith('en') && v.localService && v.name.toLowerCase().includes('female')) ||
       voices.find(v => v.lang.startsWith('en') && v.localService) ||
@@ -30,42 +27,59 @@ export function useSound() {
     )
   }, [])
 
+  const makeUtterance = useCallback((text) => {
+    const utt = new SpeechSynthesisUtterance(text)
+    utt.rate = 0.6
+    utt.pitch = 1.35
+    utt.volume = 1.0
+    const voice = pickVoice()
+    if (voice) utt.voice = voice
+    return utt
+  }, [pickVoice])
+
   const cancelSound = useCallback(() => {
     window.speechSynthesis.cancel()
     setIsSpeaking(false)
   }, [])
 
-  const playSound = useCallback((text, onEnd) => {
+  // Play a single word or phoneme string
+  const playWord = useCallback((text, onEnd) => {
     if (!text || !window.speechSynthesis) return
-
-    // Must cancel first to avoid queuing on some browsers
     window.speechSynthesis.cancel()
-
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 0.6
-    utterance.pitch = 1.35
-    utterance.volume = 1.0
-
-    const voice = pickVoice()
-    if (voice) utterance.voice = voice
-
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => {
-      setIsSpeaking(false)
-      if (onEndCallbackRef.current) onEndCallbackRef.current()
-    }
-    utterance.onerror = () => setIsSpeaking(false)
-
-    onEndCallbackRef.current = onEnd || null
-    utteranceRef.current = utterance
-
-    // Safari: slight delay prevents a known cancellation race
-    setTimeout(() => {
-      window.speechSynthesis.speak(utterance)
-    }, 50)
-
+    const utt = makeUtterance(text)
+    utt.onstart = () => setIsSpeaking(true)
+    utt.onend = () => { setIsSpeaking(false); onEnd?.() }
+    utt.onerror = () => setIsSpeaking(false)
+    setTimeout(() => window.speechSynthesis.speak(utt), 50)
     setIsSpeaking(true)
-  }, [pickVoice])
+  }, [makeUtterance])
 
-  return { playSound, cancelSound, isSpeaking }
+  // Play a single phoneme (same as playWord but no onEnd propagation to auto-advance)
+  const playPhoneme = useCallback((sound) => {
+    playWord(sound)
+  }, [playWord])
+
+  // Play each sound in the array sequentially with a 750ms gap between them
+  const playSequence = useCallback((sounds, onEnd) => {
+    if (!sounds?.length || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    setIsSpeaking(true)
+    let i = 0
+
+    const playNext = () => {
+      if (i >= sounds.length) {
+        setIsSpeaking(false)
+        onEnd?.()
+        return
+      }
+      const utt = makeUtterance(sounds[i++])
+      utt.onend = () => setTimeout(playNext, 750)
+      utt.onerror = () => { setIsSpeaking(false); onEnd?.() }
+      window.speechSynthesis.speak(utt)
+    }
+
+    setTimeout(playNext, 50)
+  }, [makeUtterance])
+
+  return { playWord, playPhoneme, playSequence, cancelSound, isSpeaking }
 }
