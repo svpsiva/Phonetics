@@ -42,7 +42,7 @@ export function useSound() {
     window.speechSynthesis.cancel()
 
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = 0.78
+    utterance.rate = 0.6
     utterance.pitch = 1.35
     utterance.volume = 1.0
 
