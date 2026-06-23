@@ -15,7 +15,9 @@ export default function CardScreen({
   isSpeaking,
   onPlayWord,
   onBack,
+  backDisabled,
   onSkip,
+  onHome,
 }) {
   const [isPulsing, setIsPulsing] = useState(false)
 
@@ -34,16 +36,23 @@ export default function CardScreen({
       className="h-full w-full flex flex-col"
       style={{ backgroundColor: lesson.bgColor }}
     >
-      {/* Top nav + progress */}
+      {/* Top bar: lesson title + progress + home button */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-2 shrink-0">
-        <NavButton direction="back" onClick={onBack} label="Go back" />
         <div className="flex-1">
           <p className="font-display text-base text-center mb-1.5" style={{ color: lesson.color }}>
             {lesson.title}
           </p>
           <ProgressBar current={cardIndex} total={totalCards} color={lesson.color} />
         </div>
-        <NavButton direction="forward" onClick={onSkip} label="Skip" />
+        <motion.button
+          onClick={onHome}
+          whileTap={{ scale: 0.88 }}
+          className="w-[48px] h-[48px] rounded-full flex items-center justify-center
+                     text-xl shadow-md bg-white/80 backdrop-blur-sm shrink-0"
+          aria-label="Home"
+        >
+          🏠
+        </motion.button>
       </div>
 
       {/* Emoji */}
@@ -80,8 +89,14 @@ export default function CardScreen({
       </div>
 
       {/* Stars */}
-      <div className="pb-5 shrink-0">
+      <div className="shrink-0">
         <StarBadge earned={starsEarned} total={totalCards} />
+      </div>
+
+      {/* Bottom nav: back + skip */}
+      <div className="flex items-center justify-between px-6 pb-5 pt-2 shrink-0">
+        <NavButton direction="back" onClick={onBack} disabled={backDisabled} label="Go back" />
+        <NavButton direction="forward" onClick={onSkip} label="Skip" />
       </div>
     </div>
   )

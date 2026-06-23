@@ -82,6 +82,7 @@ export default function App() {
               completeLesson={completeLesson}
               autoAdvance={autoAdvance}
               onBack={handleHome}
+              onHome={handleHome}
               onComplete={handleComplete}
             />
           </div>
