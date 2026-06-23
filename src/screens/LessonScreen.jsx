@@ -16,6 +16,7 @@ export default function LessonScreen({
   completeLesson,
   autoAdvance,
   onBack,
+  onHome,
   onComplete,
 }) {
   const [cardIndex, setCardIndex] = useState(0)
@@ -39,11 +40,11 @@ export default function LessonScreen({
   }, [cardIndex, items.length, completeLesson, lesson.id, onComplete])
 
   const goBack = useCallback(() => {
-    if (cardIndex === 0) { onBack(); return }
+    if (cardIndex === 0) return
     setDirection(-1)
     setCardIndex(i => i - 1)
     setLastSoundEnd(0)
-  }, [cardIndex, onBack])
+  }, [cardIndex])
 
   // Word play: earns a star + triggers auto-advance
   const handlePlayWord = useCallback(() => {
@@ -88,7 +89,9 @@ export default function LessonScreen({
             isSpeaking={isSpeaking}
             onPlayWord={handlePlayWord}
             onBack={goBack}
+            backDisabled={cardIndex === 0}
             onSkip={goNext}
+            onHome={onHome}
           />
         </motion.div>
       </AnimatePresence>
