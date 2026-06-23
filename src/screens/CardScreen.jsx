@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import EmojiCard from '../components/EmojiCard'
 import SoundButton from '../components/SoundButton'
+import PhonemeButtons from '../components/PhonemeButtons'
 import NavButton from '../components/NavButton'
 import ProgressBar from '../components/ProgressBar'
 import StarBadge from '../components/StarBadge'
@@ -14,6 +15,8 @@ export default function CardScreen({
   starsEarned,
   isSpeaking,
   onPlayWord,
+  onPlayPhoneme,
+  onPlaySequence,
   onBack,
   backDisabled,
   onSkip,
@@ -36,14 +39,8 @@ export default function CardScreen({
       className="h-full w-full flex flex-col"
       style={{ backgroundColor: lesson.bgColor }}
     >
-      {/* Top bar: lesson title + progress + home button */}
+      {/* Top bar: home button (left) + lesson title + progress */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-2 shrink-0">
-        <div className="flex-1">
-          <p className="font-display text-base text-center mb-1.5" style={{ color: lesson.color }}>
-            {lesson.title}
-          </p>
-          <ProgressBar current={cardIndex} total={totalCards} color={lesson.color} />
-        </div>
         <motion.button
           onClick={onHome}
           whileTap={{ scale: 0.88 }}
@@ -53,6 +50,12 @@ export default function CardScreen({
         >
           🏠
         </motion.button>
+        <div className="flex-1">
+          <p className="font-display text-base text-center mb-1.5" style={{ color: lesson.color }}>
+            {lesson.title}
+          </p>
+          <ProgressBar current={cardIndex} total={totalCards} color={lesson.color} />
+        </div>
       </div>
 
       {/* Emoji */}
@@ -78,13 +81,21 @@ export default function CardScreen({
         )}
       </div>
 
-      {/* Audio button */}
-      <div className="px-5 pb-2 shrink-0">
+      {/* Audio buttons */}
+      <div className="px-5 pb-2 shrink-0 flex flex-col gap-2">
         <SoundButton
           onPlay={handlePlayWord}
           isSpeaking={isSpeaking}
           color={lesson.color}
           word={item.word}
+        />
+        <PhonemeButtons
+          parts={item.parts}
+          sounds={item.sounds}
+          onPlayPhoneme={onPlayPhoneme}
+          onPlaySequence={onPlaySequence}
+          isSpeaking={isSpeaking}
+          color={lesson.color}
         />
       </div>
 

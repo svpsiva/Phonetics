@@ -29,21 +29,54 @@ export function useSound() {
     setIsSpeaking(false)
   }, [])
 
-  const playWord = useCallback((text, onEnd) => {
-    if (!text || !window.speechSynthesis) return
-    cancelSound()
+  const speak = useCallback((text, onEnd) => {
     const utt = new SpeechSynthesisUtterance(text)
     utt.rate = 0.6
     utt.pitch = 1.35
     utt.volume = 1.0
     const voice = pickVoice()
     if (voice) utt.voice = voice
-    utt.onstart = () => setIsSpeaking(true)
     utt.onend = () => { setIsSpeaking(false); onEnd?.() }
     utt.onerror = () => setIsSpeaking(false)
+    window.speechSynthesis.speak(utt)
+  }, [pickVoice])
+
+  // Full word — earns star, triggers auto-advance via onEnd
+  const playWord = useCallback((text, onEnd) => {
+    if (!text || !window.speechSynthesis) return
+    cancelSound()
     setIsSpeaking(true)
-    setTimeout(() => window.speechSynthesis.speak(utt), 50)
+    setTimeout(() => speak(text, onEnd), 50)
+  }, [cancelSound, speak])
+
+  // Single phoneme — same voice/pitch/rate as playWord
+  const playPhoneme = useCallback((sound) => {
+    if (!sound || !window.speechSynthesis) return
+    cancelSound()
+    setIsSpeaking(true)
+    setTimeout(() => speak(sound), 50)
+  }, [cancelSound, speak])
+
+  // Sequence — each sound spoken with 750ms gap, same voice as above
+  const playSequence = useCallback((sounds, onEnd) => {
+    if (!sounds?.length || !window.speechSynthesis) return
+    cancelSound()
+    setIsSpeaking(true)
+    let i = 0
+    const playNext = () => {
+      if (i >= sounds.length) { setIsSpeaking(false); onEnd?.(); return }
+      const utt = new SpeechSynthesisUtterance(sounds[i++])
+      utt.rate = 0.6
+      utt.pitch = 1.35
+      utt.volume = 1.0
+      const voice = pickVoice()
+      if (voice) utt.voice = voice
+      utt.onend = () => setTimeout(playNext, 750)
+      utt.onerror = () => { setIsSpeaking(false); onEnd?.() }
+      window.speechSynthesis.speak(utt)
+    }
+    setTimeout(playNext, 50)
   }, [cancelSound, pickVoice])
 
-  return { playWord, cancelSound, isSpeaking }
+  return { playWord, playPhoneme, playSequence, cancelSound, isSpeaking }
 }
