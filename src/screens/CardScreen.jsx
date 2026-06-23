@@ -1,0 +1,93 @@
+import { useState, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import EmojiCard from '../components/EmojiCard'
+import SoundButton from '../components/SoundButton'
+import RepeatButton from '../components/RepeatButton'
+import NavButton from '../components/NavButton'
+import ProgressBar from '../components/ProgressBar'
+import StarBadge from '../components/StarBadge'
+
+export default function CardScreen({
+  item,
+  lesson,
+  cardIndex,
+  totalCards,
+  starsEarned,
+  isSpeaking,
+  onPlay,
+  onBack,
+  onSkip,
+}) {
+  const [isPulsing, setIsPulsing] = useState(false)
+
+  const handlePlay = useCallback(() => {
+    setIsPulsing(true)
+    setTimeout(() => setIsPulsing(false), 600)
+    onPlay(item.ttsText)
+  }, [item.ttsText, onPlay])
+
+  return (
+    <div
+      className="h-full w-full flex flex-col"
+      style={{ backgroundColor: lesson.bgColor }}
+    >
+      {/* Top nav + progress */}
+      <div className="flex items-center gap-3 px-4 pt-5 pb-2 shrink-0">
+        <NavButton
+          direction="back"
+          onClick={onBack}
+          label="Go back"
+        />
+        <div className="flex-1">
+          <p className="font-display text-base text-center mb-1.5"
+             style={{ color: lesson.color }}>
+            {lesson.title}
+          </p>
+          <ProgressBar current={cardIndex} total={totalCards} color={lesson.color} />
+        </div>
+        <NavButton
+          direction="forward"
+          onClick={onSkip}
+          label="Skip"
+        />
+      </div>
+
+      {/* Emoji */}
+      <div className="flex-1 flex items-center justify-center min-h-0 px-4">
+        <EmojiCard emoji={item.emoji} word={item.word} isPulsing={isPulsing} />
+      </div>
+
+      {/* Word display */}
+      <div className="px-6 pb-2 text-center shrink-0">
+        <motion.p
+          key={item.id + '-display'}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="font-display leading-none"
+          style={{
+            fontSize: 'clamp(56px, 14vw, 96px)',
+            color: lesson.color,
+          }}
+        >
+          {item.display}
+        </motion.p>
+        <p className="font-body text-base text-gray-400 mt-1">{item.phonetic}</p>
+        {item.hint && (
+          <p className="font-body text-sm text-gray-400 mt-0.5">{item.hint}</p>
+        )}
+      </div>
+
+      {/* Buttons */}
+      <div className="px-5 pb-2 flex flex-col gap-2 shrink-0">
+        <SoundButton onPlay={handlePlay} isSpeaking={isSpeaking} color={lesson.color} />
+        <RepeatButton onPlay={handlePlay} isSpeaking={isSpeaking} color={lesson.color} />
+      </div>
+
+      {/* Stars */}
+      <div className="pb-5 shrink-0">
+        <StarBadge earned={starsEarned} total={totalCards} />
+      </div>
+    </div>
+  )
+}

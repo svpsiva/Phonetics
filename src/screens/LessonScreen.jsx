@@ -1,0 +1,102 @@
+import { useState, useEffect, useCallback } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import CardScreen from './CardScreen'
+import { useSound } from '../hooks/useSound'
+
+const slideVariants = {
+  enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
+}
+
+export default function LessonScreen({
+  lesson,
+  progress,
+  earnStar,
+  completeLesson,
+  autoAdvance,
+  onBack,
+  onComplete,
+}) {
+  const [cardIndex, setCardIndex] = useState(0)
+  const [direction, setDirection] = useState(1)
+  const [lastSoundEnd, setLastSoundEnd] = useState(0)
+  const { playSound, isSpeaking } = useSound()
+
+  const p = progress[lesson.id] || { stars: 0 }
+  const starsEarned = p.stars
+  const items = lesson.items
+  const currentItem = items[cardIndex]
+
+  const goNext = useCallback(() => {
+    if (cardIndex >= items.length - 1) {
+      completeLesson(lesson.id)
+      onComplete()
+      return
+    }
+    setDirection(1)
+    setCardIndex(i => i + 1)
+    setLastSoundEnd(0)
+  }, [cardIndex, items.length, completeLesson, lesson.id, onComplete])
+
+  const goBack = useCallback(() => {
+    if (cardIndex === 0) {
+      onBack()
+      return
+    }
+    setDirection(-1)
+    setCardIndex(i => i - 1)
+    setLastSoundEnd(0)
+  }, [cardIndex, onBack])
+
+  const handlePlay = useCallback((ttsText) => {
+    playSound(ttsText, () => {
+      earnStar(lesson.id)
+      setLastSoundEnd(Date.now())
+    })
+  }, [playSound, earnStar, lesson.id])
+
+  // Auto-advance 1.8s after sound finishes
+  useEffect(() => {
+    if (!autoAdvance || !lastSoundEnd) return
+    const timer = setTimeout(() => {
+      goNext()
+    }, 1800)
+    return () => clearTimeout(timer)
+  }, [lastSoundEnd, autoAdvance, goNext])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="h-full w-full overflow-hidden"
+    >
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={currentItem.id}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="h-full w-full absolute inset-0"
+        >
+          <CardScreen
+            item={currentItem}
+            lesson={lesson}
+            cardIndex={cardIndex}
+            totalCards={items.length}
+            starsEarned={starsEarned}
+            isSpeaking={isSpeaking}
+            onPlay={handlePlay}
+            onBack={goBack}
+            onSkip={goNext}
+          />
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
+  )
+}
