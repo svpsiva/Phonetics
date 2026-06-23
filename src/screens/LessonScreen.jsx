@@ -22,7 +22,7 @@ export default function LessonScreen({
   const [cardIndex, setCardIndex] = useState(0)
   const [direction, setDirection] = useState(1)
   const [lastSoundEnd, setLastSoundEnd] = useState(0)
-  const { playWord, isSpeaking } = useSound()
+  const { playWord, playPhoneme, playSequence, isSpeaking } = useSound()
 
   const p = progress[lesson.id] || { stars: 0 }
   const items = lesson.items
@@ -53,6 +53,14 @@ export default function LessonScreen({
       setLastSoundEnd(Date.now())
     })
   }, [currentItem.word, playWord, earnStar, lesson.id])
+
+  const handlePlayPhoneme = useCallback((sound) => {
+    playPhoneme(sound)
+  }, [playPhoneme])
+
+  const handlePlaySequence = useCallback((sounds) => {
+    playSequence(sounds)
+  }, [playSequence])
 
   // Auto-advance 1.8s after word finishes
   useEffect(() => {
@@ -88,6 +96,8 @@ export default function LessonScreen({
             starsEarned={p.stars}
             isSpeaking={isSpeaking}
             onPlayWord={handlePlayWord}
+            onPlayPhoneme={handlePlayPhoneme}
+            onPlaySequence={handlePlaySequence}
             onBack={goBack}
             backDisabled={cardIndex === 0}
             onSkip={goNext}
