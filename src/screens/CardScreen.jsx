@@ -68,7 +68,7 @@ export default function CardScreen({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
           className="font-display leading-none"
-          style={{ fontSize: 'clamp(56px, 14vw, 96px)', color: lesson.color }}
+          style={{ fontSize: 'clamp(80px, 22vw, 144px)', color: lesson.color }}
         >
           {item.display}
         </motion.p>
