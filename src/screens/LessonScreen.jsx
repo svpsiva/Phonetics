@@ -21,10 +21,9 @@ export default function LessonScreen({
   const [cardIndex, setCardIndex] = useState(0)
   const [direction, setDirection] = useState(1)
   const [lastSoundEnd, setLastSoundEnd] = useState(0)
-  const { playSound, isSpeaking } = useSound()
+  const { playWord, playPhoneme, playSequence, isSpeaking } = useSound()
 
   const p = progress[lesson.id] || { stars: 0 }
-  const starsEarned = p.stars
   const items = lesson.items
   const currentItem = items[cardIndex]
 
@@ -40,28 +39,32 @@ export default function LessonScreen({
   }, [cardIndex, items.length, completeLesson, lesson.id, onComplete])
 
   const goBack = useCallback(() => {
-    if (cardIndex === 0) {
-      onBack()
-      return
-    }
+    if (cardIndex === 0) { onBack(); return }
     setDirection(-1)
     setCardIndex(i => i - 1)
     setLastSoundEnd(0)
   }, [cardIndex, onBack])
 
-  const handlePlay = useCallback((ttsText) => {
-    playSound(ttsText, () => {
+  // Word play: earns a star + triggers auto-advance
+  const handlePlayWord = useCallback(() => {
+    playWord(currentItem.word, () => {
       earnStar(lesson.id)
       setLastSoundEnd(Date.now())
     })
-  }, [playSound, earnStar, lesson.id])
+  }, [currentItem.word, playWord, earnStar, lesson.id])
 
-  // Auto-advance 1.8s after sound finishes
+  const handlePlayPhoneme = useCallback((sound) => {
+    playPhoneme(sound)
+  }, [playPhoneme])
+
+  const handlePlaySequence = useCallback((sounds) => {
+    playSequence(sounds)
+  }, [playSequence])
+
+  // Auto-advance 1.8s after word finishes
   useEffect(() => {
     if (!autoAdvance || !lastSoundEnd) return
-    const timer = setTimeout(() => {
-      goNext()
-    }, 1800)
+    const timer = setTimeout(goNext, 1800)
     return () => clearTimeout(timer)
   }, [lastSoundEnd, autoAdvance, goNext])
 
@@ -89,9 +92,11 @@ export default function LessonScreen({
             lesson={lesson}
             cardIndex={cardIndex}
             totalCards={items.length}
-            starsEarned={starsEarned}
+            starsEarned={p.stars}
             isSpeaking={isSpeaking}
-            onPlay={handlePlay}
+            onPlayWord={handlePlayWord}
+            onPlayPhoneme={handlePlayPhoneme}
+            onPlaySequence={handlePlaySequence}
             onBack={goBack}
             onSkip={goNext}
           />

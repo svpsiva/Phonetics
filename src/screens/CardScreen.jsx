@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import EmojiCard from '../components/EmojiCard'
 import SoundButton from '../components/SoundButton'
-import RepeatButton from '../components/RepeatButton'
+import PhonemeButtons from '../components/PhonemeButtons'
 import NavButton from '../components/NavButton'
 import ProgressBar from '../components/ProgressBar'
 import StarBadge from '../components/StarBadge'
@@ -14,17 +14,23 @@ export default function CardScreen({
   totalCards,
   starsEarned,
   isSpeaking,
-  onPlay,
+  onPlayWord,
+  onPlayPhoneme,
+  onPlaySequence,
   onBack,
   onSkip,
 }) {
   const [isPulsing, setIsPulsing] = useState(false)
 
-  const handlePlay = useCallback(() => {
+  const pulse = useCallback(() => {
     setIsPulsing(true)
     setTimeout(() => setIsPulsing(false), 600)
-    onPlay(item.ttsText)
-  }, [item.ttsText, onPlay])
+  }, [])
+
+  const handlePlayWord = useCallback(() => {
+    pulse()
+    onPlayWord()
+  }, [pulse, onPlayWord])
 
   return (
     <div
@@ -33,23 +39,14 @@ export default function CardScreen({
     >
       {/* Top nav + progress */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-2 shrink-0">
-        <NavButton
-          direction="back"
-          onClick={onBack}
-          label="Go back"
-        />
+        <NavButton direction="back" onClick={onBack} label="Go back" />
         <div className="flex-1">
-          <p className="font-display text-base text-center mb-1.5"
-             style={{ color: lesson.color }}>
+          <p className="font-display text-base text-center mb-1.5" style={{ color: lesson.color }}>
             {lesson.title}
           </p>
           <ProgressBar current={cardIndex} total={totalCards} color={lesson.color} />
         </div>
-        <NavButton
-          direction="forward"
-          onClick={onSkip}
-          label="Skip"
-        />
+        <NavButton direction="forward" onClick={onSkip} label="Skip" />
       </div>
 
       {/* Emoji */}
@@ -65,10 +62,7 @@ export default function CardScreen({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
           className="font-display leading-none"
-          style={{
-            fontSize: 'clamp(56px, 14vw, 96px)',
-            color: lesson.color,
-          }}
+          style={{ fontSize: 'clamp(56px, 14vw, 96px)', color: lesson.color }}
         >
           {item.display}
         </motion.p>
@@ -78,10 +72,22 @@ export default function CardScreen({
         )}
       </div>
 
-      {/* Buttons */}
+      {/* Audio buttons */}
       <div className="px-5 pb-2 flex flex-col gap-2 shrink-0">
-        <SoundButton onPlay={handlePlay} isSpeaking={isSpeaking} color={lesson.color} />
-        <RepeatButton onPlay={handlePlay} isSpeaking={isSpeaking} color={lesson.color} />
+        <SoundButton
+          onPlay={handlePlayWord}
+          isSpeaking={isSpeaking}
+          color={lesson.color}
+          word={item.word}
+        />
+        <PhonemeButtons
+          parts={item.parts}
+          sounds={item.sounds}
+          onPlayPhoneme={onPlayPhoneme}
+          onPlaySequence={onPlaySequence}
+          isSpeaking={isSpeaking}
+          color={lesson.color}
+        />
       </div>
 
       {/* Stars */}
