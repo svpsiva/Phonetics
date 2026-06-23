@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import EmojiCard from '../components/EmojiCard'
 import SoundButton from '../components/SoundButton'
-import PhonemeButtons from '../components/PhonemeButtons'
 import NavButton from '../components/NavButton'
 import ProgressBar from '../components/ProgressBar'
 import StarBadge from '../components/StarBadge'
@@ -15,8 +14,6 @@ export default function CardScreen({
   starsEarned,
   isSpeaking,
   onPlayWord,
-  onPlayPhoneme,
-  onPlaySequence,
   onBack,
   onSkip,
 }) {
@@ -72,21 +69,13 @@ export default function CardScreen({
         )}
       </div>
 
-      {/* Audio buttons */}
-      <div className="px-5 pb-2 flex flex-col gap-2 shrink-0">
+      {/* Audio button */}
+      <div className="px-5 pb-2 shrink-0">
         <SoundButton
           onPlay={handlePlayWord}
           isSpeaking={isSpeaking}
           color={lesson.color}
           word={item.word}
-        />
-        <PhonemeButtons
-          parts={item.parts}
-          sounds={item.sounds}
-          onPlayPhoneme={onPlayPhoneme}
-          onPlaySequence={onPlaySequence}
-          isSpeaking={isSpeaking}
-          color={lesson.color}
         />
       </div>
 
