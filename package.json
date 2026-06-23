@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-sounds": "node scripts/generate-sounds.js"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",
