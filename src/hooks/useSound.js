@@ -1,82 +1,62 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
+
+const BASE = import.meta.env.BASE_URL
+const audioCache = new Map()
+
+function getAudio(name) {
+  if (!audioCache.has(name)) audioCache.set(name, new Audio(`${BASE}sounds/${name}.mp3`))
+  return audioCache.get(name)
+}
 
 export function useSound() {
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const voicesRef = useRef([])
-
-  useEffect(() => {
-    const loadVoices = () => { voicesRef.current = window.speechSynthesis.getVoices() }
-    loadVoices()
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices)
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices)
-      window.speechSynthesis.cancel()
-    }
-  }, [])
-
-  const pickVoice = useCallback(() => {
-    const voices = voicesRef.current
-    return (
-      voices.find(v => v.lang.startsWith('en') && v.localService && v.name.toLowerCase().includes('female')) ||
-      voices.find(v => v.lang.startsWith('en') && v.localService) ||
-      voices.find(v => v.lang.startsWith('en')) ||
-      voices[0] || null
-    )
-  }, [])
+  const currentAudioRef = useRef(null)
 
   const cancelSound = useCallback(() => {
-    window.speechSynthesis.cancel()
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause()
+      currentAudioRef.current.currentTime = 0
+      currentAudioRef.current = null
+    }
     setIsSpeaking(false)
   }, [])
 
-  const speak = useCallback((text, onEnd) => {
-    const utt = new SpeechSynthesisUtterance(text)
-    utt.rate = 0.6
-    utt.pitch = 1.35
-    utt.volume = 1.0
-    const voice = pickVoice()
-    if (voice) utt.voice = voice
-    utt.onend = () => { setIsSpeaking(false); onEnd?.() }
-    utt.onerror = () => setIsSpeaking(false)
-    window.speechSynthesis.speak(utt)
-  }, [pickVoice])
-
-  // Full word — earns star, triggers auto-advance via onEnd
-  const playWord = useCallback((text, onEnd) => {
-    if (!text || !window.speechSynthesis) return
+  const playAudio = useCallback((name, onEnd) => {
     cancelSound()
+    const audio = getAudio(name)
+    audio.currentTime = 0
+    currentAudioRef.current = audio
     setIsSpeaking(true)
-    setTimeout(() => speak(text, onEnd), 50)
-  }, [cancelSound, speak])
+    audio.onended = () => { setIsSpeaking(false); currentAudioRef.current = null; onEnd?.() }
+    audio.onerror = () => { setIsSpeaking(false); currentAudioRef.current = null }
+    audio.play().catch(() => { setIsSpeaking(false); currentAudioRef.current = null })
+  }, [cancelSound])
 
-  // Single phoneme — same voice/pitch/rate as playWord
+  const playWord = useCallback((word, onEnd) => {
+    playAudio(word, onEnd)
+  }, [playAudio])
+
   const playPhoneme = useCallback((sound) => {
-    if (!sound || !window.speechSynthesis) return
-    cancelSound()
-    setIsSpeaking(true)
-    setTimeout(() => speak(sound), 50)
-  }, [cancelSound, speak])
+    playAudio(sound)
+  }, [playAudio])
 
-  // Sequence — each sound spoken with 750ms gap, same voice as above
   const playSequence = useCallback((sounds, onEnd) => {
-    if (!sounds?.length || !window.speechSynthesis) return
+    if (!sounds?.length) return
     cancelSound()
     setIsSpeaking(true)
     let i = 0
     const playNext = () => {
       if (i >= sounds.length) { setIsSpeaking(false); onEnd?.(); return }
-      const utt = new SpeechSynthesisUtterance(sounds[i++])
-      utt.rate = 0.6
-      utt.pitch = 1.35
-      utt.volume = 1.0
-      const voice = pickVoice()
-      if (voice) utt.voice = voice
-      utt.onend = () => setTimeout(playNext, 750)
-      utt.onerror = () => { setIsSpeaking(false); onEnd?.() }
-      window.speechSynthesis.speak(utt)
+      const name = sounds[i++]
+      const audio = getAudio(name)
+      audio.currentTime = 0
+      currentAudioRef.current = audio
+      audio.onended = () => setTimeout(playNext, 750)
+      audio.onerror = () => { setIsSpeaking(false); onEnd?.() }
+      audio.play().catch(() => { setIsSpeaking(false); onEnd?.() })
     }
-    setTimeout(playNext, 50)
-  }, [cancelSound, pickVoice])
+    playNext()
+  }, [cancelSound])
 
   return { playWord, playPhoneme, playSequence, cancelSound, isSpeaking }
 }
