@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import CardScreen from './CardScreen'
-import { useSound } from '../hooks/useSound'
+import { useSound, preloadSounds } from '../hooks/useSound'
 
 const slideVariants = {
   enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
@@ -23,6 +23,16 @@ export default function LessonScreen({
   const [direction, setDirection] = useState(1)
   const [lastSoundEnd, setLastSoundEnd] = useState(0)
   const { playWord, playPhoneme, playSequence, isSpeaking } = useSound()
+
+  // Preload all audio for this lesson on mount so playback is instant
+  useEffect(() => {
+    const names = new Set()
+    for (const item of lesson.items) {
+      names.add(item.word)
+      for (const s of item.sounds) names.add(s)
+    }
+    preloadSounds([...names])
+  }, [lesson.id])
 
   const p = progress[lesson.id] || { stars: 0 }
   const items = lesson.items
