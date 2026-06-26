@@ -4,8 +4,16 @@ const BASE = import.meta.env.BASE_URL
 const audioCache = new Map()
 
 function getAudio(name) {
-  if (!audioCache.has(name)) audioCache.set(name, new Audio(`${BASE}sounds/${name}.mp3`))
+  if (!audioCache.has(name)) {
+    const audio = new Audio(`${BASE}sounds/${name}.mp3`)
+    audio.preload = 'auto'
+    audioCache.set(name, audio)
+  }
   return audioCache.get(name)
+}
+
+export function preloadSounds(names) {
+  for (const name of names) getAudio(name).load()
 }
 
 export function useSound() {
