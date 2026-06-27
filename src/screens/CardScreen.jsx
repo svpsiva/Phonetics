@@ -76,9 +76,6 @@ export default function CardScreen({
           {item.display}
         </motion.p>
         <p className="font-body text-base text-gray-400 mt-1">{item.phonetic}</p>
-        {item.hint && (
-          <p className="font-body text-sm text-gray-400 mt-0.5">{item.hint}</p>
-        )}
       </div>
 
       {/* Audio buttons */}
